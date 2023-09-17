@@ -111,6 +111,14 @@ impl Board {
     fn field(&mut self, x: usize, y: usize) -> &mut Field {
         &mut self.fields[x][y]
     }
+
+    fn _all_fields(&self) -> impl Iterator<Item = &Field> {
+        self.fields.iter().flatten()
+    }
+
+    fn num_solved(&self) -> usize {
+        self._all_fields().filter(|x| x.is_solved()).count()
+    }
 }
 
 fn main() {
@@ -197,4 +205,6 @@ fn test_parse_board() {
     assert_eq!(None, b.field(2, 0).value);
     assert_eq!(Some(3), b.field(0, 0).value);
     assert_eq!(Some(3), b.field(0, 0).value);
+
+    assert_eq!(44, b.num_solved());
 }
