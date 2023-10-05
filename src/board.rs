@@ -2,7 +2,7 @@ use crate::field::Field;
 
 #[derive(PartialEq)]
 #[derive(Debug)]
-struct Board {
+pub(crate) struct Board {
     fields: [[Field; 9]; 9],
 }
 
@@ -23,7 +23,7 @@ impl Board {
         }
     }
 
-    fn parse(printout: &str) -> Result<Board, String> {
+    pub(crate) fn parse(printout: &str) -> Result<Board, String> {
         let parts: Vec<&str> = printout.split(char::is_whitespace).filter(|c| !c.is_empty()).collect();
         if parts.len() != 9 * 9 {
             return Err(format!("Wrong number of fields in input, expected 81 got {len}.", len = parts.len()));
@@ -35,23 +35,37 @@ impl Board {
             if val.is_some() {
                 let x = i % 9;
                 let y = i / 9;
-                b.field(x, y).set(val.unwrap())?;
+                b.field(x, y).solve(val.unwrap())?;
             }
         }
 
         return Ok(b);
     }
 
-    fn field(&mut self, x: usize, y: usize) -> &mut Field {
+    pub(crate) fn field(&mut self, x: usize, y: usize) -> &mut Field {
         &mut self.fields[x][y]
     }
 
-    fn _all_fields(&self) -> impl Iterator<Item=&Field> {
-        self.fields.iter().flatten()
+    pub(crate) fn field_seq(&mut self, i: usize) -> &mut Field {
+        &mut self.fields[i % 9][i / 9]
+    }
+
+    fn _all_fields(&self) -> impl Iterator<Item=(usize, usize, &Field)> {
+        let mut res : Vec<(usize, usize, &Field)> = vec![];
+        for (x, row) in self.fields.iter().enumerate() {
+            for (y, f) in row.iter().enumerate() {
+                res.push((x, y, f));
+            }
+        }
+        return res.into_iter();
     }
 
     fn num_solved(&self) -> usize {
-        self._all_fields().filter(|x| x.is_solved()).count()
+        self._all_fields().filter(|(_, _, x)| x.is_solved()).count()
+    }
+
+    pub(crate) fn is_solved(&self) -> bool {
+        self.num_solved() == 81
     }
 }
 
@@ -63,11 +77,14 @@ mod tests {
     fn test_board_basics() {
         let mut b = Board::new();
         for x in 1..8 {
-            assert!(!b.field(0, 0).eliminate(x).unwrap());
+            assert!(b.field(0, 0).eliminate(x).unwrap());
             assert!(!b.field(0, 0).is_solved());
         }
         assert!(b.field(0, 0).eliminate(9).unwrap());
         assert!(b.field(0, 0).is_solved());
+
+        assert_eq!(1, b.num_solved());
+        assert!(!b.is_solved());
     }
 
     fn test_board() -> Board {
@@ -95,8 +112,8 @@ mod tests {
 
         assert_eq!(Some(3), b.field(0, 0).value);
         assert_eq!(None, b.field(2, 0).value);
-        assert_eq!(Some(3), b.field(0, 0).value);
-        assert_eq!(Some(3), b.field(0, 0).value);
+        assert_eq!(Some(5), b.field(1, 1).value);
+        assert_eq!(Some(3), b.field(8, 8).value);
 
         assert_eq!(44, b.num_solved());
     }

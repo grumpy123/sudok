@@ -30,7 +30,7 @@ impl Field {
         }
     }
 
-    pub(crate) fn set(&mut self, v: i8) -> Result<(), String> {
+    pub(crate) fn solve(&mut self, v: i8) -> Result<(), String> {
         match self.value {
             Some(x) if x == v => Ok(()),
             Some(x) => Err(format!("{v} can't be the solution for this field, it already has a solution {x}.")),
@@ -46,6 +46,7 @@ impl Field {
         }
     }
 
+    /// Returns `true` if the option has been removed, thus progress made
     pub(crate) fn eliminate(&mut self, v: i8) -> Result<bool, String> {
         let res = self.options.remove(&v);
         if !res {
@@ -59,7 +60,7 @@ impl Field {
                 self.value = Some(x);
                 Ok(true)
             }
-            _ => Ok(false)
+            _ => Ok(true)
         }
     }
 }
@@ -96,23 +97,23 @@ mod tests {
     }
 
     #[test]
-    fn test_set_field() {
+    fn test_solve() {
         let mut f = Field::new();
-        assert_eq!(Ok(()), f.set(8));
+        assert_eq!(Ok(()), f.solve(8));
         assert!(f.is_solved());
         assert_eq!(Some(8), f.value);
         assert_eq!(1, f.options.len());
 
         assert_eq!(
             Err("1 can't be the solution for this field, it already has a solution 8.".to_string()),
-            f.set(1)
+            f.solve(1)
         );
 
         f = Field::new();
         f.eliminate(3).unwrap();
         assert_eq!(
             Err("3 can't be the solution for this field, it's not a valid option.".to_string()),
-            f.set(3)
+            f.solve(3)
         );
     }
 }
